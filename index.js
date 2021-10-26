@@ -22,6 +22,7 @@ let pgDumpPath = path.join(
 
 const dump = function ({
   port = 5432,
+  host,
   dbname,
   username,
   password,
@@ -29,6 +30,10 @@ const dump = function ({
   format = "c",
 }) {
   let args = [];
+  if (host) {
+    args.push("--host");
+    args.push(host);
+  }
   if (port) {
     args.push("--port");
     args.push(port);
@@ -57,6 +62,7 @@ const dump = function ({
 };
 const restore = function ({
   port = 5432,
+  host,
   dbname,
   username,
   password,
@@ -65,6 +71,10 @@ const restore = function ({
   create,
 }) {
   let args = [];
+  if (host) {
+    args.push("--host");
+    args.push(host);
+  }
   if (port) {
     args.push("--port");
     args.push(port);
