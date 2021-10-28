@@ -1,6 +1,6 @@
 {
-  "name": "pg-dump-restore-node-wrapper",
-  "version": "0.0.1",
+  "name": "@endodata/pg-dump-restore-node-wrapper",
+  "version": "0.0.2",
   "description": "A very basic nodejs wrapper around the pg_dump and pg_restore",
   "main": "index.js",
   "scripts": {
@@ -10,10 +10,29 @@
   "license": "MIT",
   "dependencies": {
     "execa": "^4.0.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
     "fs-extra": "^10.0.0",
     "jest": "^27.3.1",
-    "path": "^0.12.7",
     "pg": "^8.7.1",
     "sequelize": "^6.8.0"
-  }
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/endodata/pg-dump-restore-node-wrapper.git"
+  },
+  "keywords": [
+    "pg",
+    "pg_dump",
+    "pg_restore",
+    "postgres"
+  ],
+  "bugs": {
+    "url": "https://github.com/endodata/pg-dump-restore-node-wrapper/issues"
+  },
+  "homepage": "https://github.com/endodata/pg-dump-restore-node-wrapper#readme"
 }
