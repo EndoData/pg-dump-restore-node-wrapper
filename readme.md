@@ -1,16 +1,16 @@
 # pg-dump-restore-node-wrapper
 
-This very small utility includes pg_dump and pg_restore binaries for Windows and macOS, taken from Postgres 13.4. DLLs and dylibs are also included.
+This very small utility that includes pg_dump and pg_restore binaries for Windows and macOS, taken from Postgres 13.4. DLLs and dylibs are also included, making the binaries standalone.
 
 A thin CLI wrapper is also provided.
 
 ## Usage
 
 ```js
-import pg_dump_restore from "pg-dump-restore-node-wrapper";
+import pgDumpRestore from "pg-dump-restore-node-wrapper";
 
 async function main() {
-  const { stdout, stderr } = await pg_dump_restore.dump({
+  const { stdout, stderr } = await pgDumpRestore.dump({
     port, // defaults to 5432
     host,
     dbname,
@@ -20,7 +20,7 @@ async function main() {
     format, // defaults to 'c'
   }); // outputs an execa object
 
-  const { stdout, stderr } = await pg_dump_restore.restore({
+  const { stdout, stderr } = await pgDumpRestore.restore({
     port, // defaults to 5432
     host,
     dbname,
@@ -33,7 +33,7 @@ async function main() {
 }
 ```
 
-Please see the [pg_dump](https://www.postgresql.org/docs/12/app-pgdump.html) and [pg_restore](https://www.postgresql.org/docs/12/app-pgrestore.html) documentation for details on the arguments.
+Please see the [pg_dump](https://www.postgresql.org/docs/12/app-pgdump.html) and [pg_restore](https://www.postgresql.org/docs/12/app-pgrestore.html) documentation for details on the arguments and [execa](https://github.com/sindresorhus/execa) for details on the output streams.
 
 ### Creating the binaries
 
