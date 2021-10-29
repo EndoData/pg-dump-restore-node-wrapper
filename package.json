@@ -1,6 +1,6 @@
 {
   "name": "@endodata/pg-dump-restore-node-wrapper",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A very basic nodejs wrapper around the pg_dump and pg_restore",
   "main": "index.js",
   "scripts": {
