@@ -6,6 +6,7 @@ const CREDENTIALS = {
   port: 5432,
   dbname: "pg_dump_restore_tests",
   username: "postgres",
+  password: "28F50CD7-CA87-4796-AF3F-4C161483CCE1",
 };
 
 let databaseConfig = {
@@ -15,6 +16,7 @@ let databaseConfig = {
   database: CREDENTIALS.dbname,
   username: CREDENTIALS.username,
   port: CREDENTIALS.port,
+  password: CREDENTIALS.password,
 };
 
 let sequelize = new Sequelize(databaseConfig);

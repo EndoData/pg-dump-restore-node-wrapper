@@ -1,5 +1,5 @@
 const database = require("./database.mock");
-const pg_dump_restore = require("../index");
+const pgDumpRestore = require("../index");
 const fs = require("fs-extra");
 
 describe("Can dump and restore database", () => {
@@ -10,7 +10,7 @@ describe("Can dump and restore database", () => {
   describe("Can dump", () => {
     test("can dump database", async () => {
       expect.assertions(1);
-      await pg_dump_restore.dump({
+      await pgDumpRestore.dump({
         ...database.CREDENTIALS,
         file: "./test.pgdump",
       });
@@ -21,7 +21,7 @@ describe("Can dump and restore database", () => {
     test("can restore database", async () => {
       expect.assertions(1);
       await database.sequelize.drop();
-      await pg_dump_restore.restore({
+      await pgDumpRestore.restore({
         ...database.CREDENTIALS,
         filename: "./test.pgdump",
       });
