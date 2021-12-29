@@ -35,7 +35,7 @@ async function main() {
 
 Please see the [pg_dump](https://www.postgresql.org/docs/12/app-pgdump.html) and [pg_restore](https://www.postgresql.org/docs/12/app-pgrestore.html) documentation for details on the arguments and [execa](https://github.com/sindresorhus/execa) for details on the output streams.
 
-### Creating the binaries
+## Creating the binaries
 
 pg_dump V<=X can be restored using pg_restore V>=X.
 
@@ -50,3 +50,20 @@ I did not use the tool to bundle the dependencies as it would corrupt the execut
 ### Windows
 
 I used https://github.com/lucasg/Dependencies to determine the required DLL, filtering only the local dependencies.
+
+
+
+## To publish to GHCR
+
+Add this to `package.json`
+```json
+  "publishConfig": {
+    "registry":"https://npm.pkg.github.com"
+  },
+```
+
+and add a `.npmrc` to the root of the repo with 
+```.npmrc
+//npm.pkg.github.com/:_authToken=AUTH_TOKEN
+```
+Where `AUTH_TOKEN` is replaced with a GitHub token.
