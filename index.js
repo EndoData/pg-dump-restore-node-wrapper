@@ -28,6 +28,11 @@ const dump = function ({
   password,
   file,
   format = "c",
+  blobs,
+  schema = [],
+  "exclude-schema": excludeSchema = [],
+  table = [],
+  "exclude-table": excludeTable = [],
 }) {
   let args = [];
   if (password) {
@@ -69,6 +74,53 @@ const dump = function ({
   if (format) {
     args.push("--format");
     args.push(format);
+  }
+  if (blobs) {
+    args.push("--blobs");
+  }
+  if (schema) {
+    if (Array.isArray(schema)) {
+      for (item of schema) {
+        args.push("--schema");
+        args.push(item);
+      }
+    } else {
+      args.push("--schema");
+      args.push(schema);
+    }
+  }
+  if (excludeSchema) {
+    if (Array.isArray(excludeSchema)) {
+      for (item of excludeSchema) {
+        args.push("--exclude-schema");
+        args.push(item);
+      }
+    } else {
+      args.push("--exclude-schema");
+      args.push(excludeSchema);
+    }
+  }
+  if (table) {
+    if (Array.isArray(table)) {
+      for (item of table) {
+        args.push("--table");
+        args.push(item);
+      }
+    } else {
+      args.push("--table");
+      args.push(table);
+    }
+  }
+  if (excludeTable) {
+    if (Array.isArray(excludeTable)) {
+      for (item of excludeTable) {
+        args.push("--exclude-table");
+        args.push(item);
+      }
+    } else {
+      args.push("--exclude-table");
+      args.push(excludeTable);
+    }
   }
   return execa(pgDumpPath, args, {});
 };
