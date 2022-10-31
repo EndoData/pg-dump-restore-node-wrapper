@@ -33,6 +33,7 @@ const dump = function ({
   "exclude-schema": excludeSchema = [],
   table = [],
   "exclude-table": excludeTable = [],
+  "exclude-table-data": excludeTableData = [],
 }) {
   let args = [];
   if (password) {
@@ -120,6 +121,17 @@ const dump = function ({
     } else {
       args.push("--exclude-table");
       args.push(excludeTable);
+    }
+  }
+  if (excludeTableData) {
+    if (Array.isArray(excludeTableData)) {
+      for (item of excludeTableData) {
+        args.push("--exclude-table-data");
+        args.push(item);
+      }
+    } else {
+      args.push("--exclude-table-data");
+      args.push(excludeTableData);
     }
   }
   return execa(pgDumpPath, args, {});

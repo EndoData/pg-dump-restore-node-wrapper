@@ -22,7 +22,7 @@ let databaseConfig = {
 let sequelize = new Sequelize(databaseConfig);
 
 const TableA = sequelize.define(
-  "tableA",
+  "table_A",
   {
     id: {
       type: Sequelize.STRING,
@@ -42,7 +42,7 @@ const TableA = sequelize.define(
 );
 
 const TableB = sequelize.define(
-  "tableB",
+  "table_B",
   {
     id: {
       type: Sequelize.STRING,
@@ -62,7 +62,7 @@ const TableB = sequelize.define(
 );
 
 const TableC = sequelize.define(
-  "tableC",
+  "table_C",
   {
     id: {
       type: Sequelize.STRING,
@@ -82,7 +82,7 @@ const TableC = sequelize.define(
 );
 
 const TableD = sequelize.define(
-  "tableD",
+  "table_D",
   {
     id: {
       type: Sequelize.STRING,

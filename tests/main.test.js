@@ -21,9 +21,10 @@ describe("Can dump and restore database", () => {
       await pgDumpRestore.dump({
         ...database.CREDENTIALS,
         file: "./test_include_exclude_table.pgdump",
-        // table: "tabl*",
-        // table: "'tableA'",
-        excludeTable: "*",
+        table: "tabl*",
+        // schema: "public",
+        // table: ["public.table_A"],
+        excludeTableData: "public.table_*",
       });
       expect(
         await fs.pathExists("./test_include_exclude_table.pgdump")
