@@ -21,8 +21,8 @@ let databaseConfig = {
 
 let sequelize = new Sequelize(databaseConfig);
 
-const Patient = sequelize.define(
-  "patient",
+const TableA = sequelize.define(
+  "tableA",
   {
     id: {
       type: Sequelize.STRING,
@@ -37,18 +37,100 @@ const Patient = sequelize.define(
     updatedAt: "updated_at",
     deletedAt: "deleted_at",
     paranoid: true,
+    freezeTableName: true,
+  }
+);
+
+const TableB = sequelize.define(
+  "tableB",
+  {
+    id: {
+      type: Sequelize.STRING,
+      primaryKey: true,
+      allowNull: false,
+    },
+    data: { type: Sequelize.JSON },
+    misc: { type: Sequelize.JSON },
+  },
+  {
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    deletedAt: "deleted_at",
+    paranoid: true,
+    freezeTableName: true,
+  }
+);
+
+const TableC = sequelize.define(
+  "tableC",
+  {
+    id: {
+      type: Sequelize.STRING,
+      primaryKey: true,
+      allowNull: false,
+    },
+    data: { type: Sequelize.JSON },
+    misc: { type: Sequelize.JSON },
+  },
+  {
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    deletedAt: "deleted_at",
+    paranoid: true,
+    freezeTableName: true,
+  }
+);
+
+const TableD = sequelize.define(
+  "tableD",
+  {
+    id: {
+      type: Sequelize.STRING,
+      primaryKey: true,
+      allowNull: false,
+    },
+    data: { type: Sequelize.JSON },
+    misc: { type: Sequelize.JSON },
+  },
+  {
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    deletedAt: "deleted_at",
+    paranoid: true,
+    freezeTableName: true,
   }
 );
 
 const populate = async () => {
-  let patient2 = await Patient.create(
-    {
-      id: "p4567",
-      data: { wow: 1 },
-      misc: {},
-    },
-    { user_id: "ME" }
-  );
+  await TableA.create({
+    id: "elementTableA",
+    data: { wow: "A" },
+    misc: {},
+  });
+  await TableB.create({
+    id: "elementTableB",
+    data: { wow: "B" },
+    misc: {},
+  });
+  await TableC.create({
+    id: "elementTableC",
+    data: { wow: "C" },
+    misc: {},
+  });
+  await TableD.create({
+    id: "elementTableD",
+    data: { wow: "D" },
+    misc: {},
+  });
 };
 
-module.exports = { Patient, sequelize, populate, CREDENTIALS };
+module.exports = {
+  TableA,
+  TableB,
+  TableC,
+  TableD,
+
+  sequelize,
+  populate,
+  CREDENTIALS,
+};
