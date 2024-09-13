@@ -15,6 +15,7 @@ async function main() {
     host,
     dbname,
     username,
+    verbose: true, // defaults to false
     password,
     file: "./test.pgdump",
     format, // defaults to 'c'
@@ -26,6 +27,7 @@ async function main() {
     dbname,
     username,
     password,
+    verbose: true, // defaults to false
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
     clean, // defaults to false
     create, // defaults to false
