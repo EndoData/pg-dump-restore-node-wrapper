@@ -18,7 +18,9 @@ async function main() {
     verbose: true, // defaults to false
     password,
     file: "./test.pgdump",
-    format, // defaults to 'c'
+    format, // defaults to 'c', 
+    createMethod: 'pg_restore', // defaults to 'pg_restore'. The options are 'auto', 'psql' and 'pg_restore'
+    createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if createMethod is psql)
   }); // outputs an execa object
 
   const { stdout, stderr } = await pgDumpRestore.restore({

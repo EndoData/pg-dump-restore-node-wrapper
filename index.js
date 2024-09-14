@@ -95,6 +95,7 @@ const createDatabaseAndRetry = async function (params) {
   const pgRestorePath = params.filename;
   const args = params.args;
   const execaArgs = params.execaArgs;
+  const createPsqlWith = params.args.createPsqlWith;
 
   console.info(`Trying to create ${dbname} using psql...`);
 
@@ -107,7 +108,7 @@ const createDatabaseAndRetry = async function (params) {
   });
 
   await client.connect();
-  await client.query(`CREATE DATABASE ${dbname};`);
+  await client.query(`CREATE DATABASE ${dbname}${createPsqlWith ? ' WITH ' + createPsqlWith : ''};`);
   console.info(`Database ${dbname} created successfully. Continuing with pg_restore...`);
   await client.end();
 
@@ -133,7 +134,9 @@ const restore = async function ({
   filename,
   clean,
   create,
+  createMethod = 'pg_restore'
 }) {
+ 
   let args = [];
   if (password) {
     if (!(username && password && host && port && dbname)) {
@@ -170,7 +173,7 @@ const restore = async function ({
   if (clean) {
     args.push("--clean");
   }
-  if (create) {
+  if (create && (createMethod === 'auto' || createMethod === 'pg_restore')) {
     args.push("--create");
   }
   if (!filename) {
@@ -206,7 +209,7 @@ const restore = async function ({
 
       return createDatabaseAndRetry({
         filename: pgRestorePath,
-        args: { host, port, dbname, username, password },
+        args: { host, port, dbname, username, password, createPsqlWith },
         execaArgs: args
       });
 
