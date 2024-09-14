@@ -87,7 +87,42 @@ const dump = function ({
 
   return subprocess; 
 };
-const restore = function ({
+
+const createDatabaseAndRetry = async function (params) {
+
+  const dbname = params.args.dbname;
+  const pgRestorePath = params.filename;
+  const args = params.args;
+  const execaArgs = params.execaArgs;
+
+  console.info(`Trying to create ${dbname} using psql...`);
+
+  const client = new Client({
+    host: args.host,
+    port: args.port,
+    database: 'postgres',
+    user: args.username,
+    password: args.password
+  });
+
+  await client.connect();
+  await client.query(`CREATE DATABASE ${dbname};`);
+  console.info(`Database ${dbname} created successfully. Continuing with pg_restore...`);
+  await client.end();
+
+  const retrySubprocess = execa(pgRestorePath, execaArgs, {});
+  retrySubprocess.stdout.on('data', (data) => {
+    console.log(data.toString().trim());
+  });
+  retrySubprocess.stderr.on('data', (data) => {
+    console.info(data.toString().trim());
+  });
+
+  return retrySubprocess;
+
+}
+
+const restore = async function ({
   port = 5432,
   host,
   dbname,
@@ -156,7 +191,32 @@ const restore = function ({
     console.info(data.toString().trim());
   });
 
-  return subprocess;  
+  let result = null;
+  try {
+
+    return await subprocess;
+
+  } catch (error) {
+
+    if (error.exitCode !== 0 &&
+      error.stderr.startsWith("pg_restore: error:") &&
+      error.stderr.endsWith("does not exist") &&
+      create) {
+
+      return createDatabaseAndRetry({
+        filename: pgRestorePath,
+        args: { host, port, dbname, username, password },
+        execaArgs: args
+      });
+
+    } else {
+
+      return result
+
+    }
+
+  }
+
 };
 
 module.exports = { dump, restore, pgRestorePath, pgDumpPath };
