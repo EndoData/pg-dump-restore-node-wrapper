@@ -1,5 +1,6 @@
 const execa = require("execa");
 const path = require("path");
+const { Client } = require("pg");
 
 let os = process.platform === "win32" ? "win" : "macos";
 

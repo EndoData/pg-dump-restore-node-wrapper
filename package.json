@@ -13,7 +13,8 @@
   "license": "MIT",
   "dependencies": {
     "execa": "^4.0.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
     "fs-extra": "^10.0.0",
