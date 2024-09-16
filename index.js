@@ -84,6 +84,17 @@ const restore = function ({
   disableTriggers
 }) {
   let args = [];
+  
+  if (clean) {
+    args.push("--clean");
+  }
+  if (create) {
+    args.push("--create");
+  } 
+  if (disableTriggers) {
+    args.push("--disable-triggers");
+  }
+  
   if (password) {
     if (!(username && password && host && port && dbname)) {
       throw new Error(
@@ -116,15 +127,6 @@ const restore = function ({
     }
   }
 
-  if (clean) {
-    args.push("--clean");
-  }
-  if (create) {
-    args.push("--create");
-  } 
-  if (disableTriggers) {
-    args.push("--disable-triggers");
-  }
   if (!filename) {
     throw new Error("Needs filename in the options");
   }
