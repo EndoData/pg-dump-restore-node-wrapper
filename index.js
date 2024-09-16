@@ -77,8 +77,8 @@ const dump = function ({
   }
 
   const subprocess = execa(pgDumpPath, args, {});
-  subprocess.stdout.on('data', checkError);
-  subprocess.stderr.on('data', checkError);
+  subprocess.stdout.on('data', data => checkError(data, { dbname, createMethod }));
+  subprocess.stderr.on('data', data => checkError(data, { dbname, createMethod }));
   return subprocess; 
 
 };
@@ -88,7 +88,7 @@ const checkError = (data, args) => {
   const message = data.toString().trim();
   if (message.includes('error:')) {
     if ((args?.createMethod == 'auto' || args?.createMethod == 'psql') && !message.includes('already exists')) {
-      console.info(`Trying to create ${dbname} using psql...`);
+      console.info(`Trying to create ${args?.dbname} using psql...`);
     } else {
       console.error(message);
     }
@@ -104,6 +104,7 @@ const createDatabaseAndRetry = async function (params) {
   const pgRestorePath = params.filename;
   const args = params.args;
   const execaArgs = params.execaArgs;
+  const createMethod = params.args.createMethod;
   const createPsqlWith = params.args.createPsqlWith;
 
   console.info(`Trying to create ${dbname} using psql...`);
@@ -122,8 +123,8 @@ const createDatabaseAndRetry = async function (params) {
   await client.end();
 
   const retrySubprocess = execa(pgRestorePath, execaArgs, {});
-  retrySubprocess.stdout.on('data', checkError);
-  retrySubprocess.stderr.on('data', checkError);  
+  retrySubprocess.stdout.on('data', data => checkError(data, { dbname, createMethod }));
+  retrySubprocess.stderr.on('data', data => checkError(data, { dbname, createMethod }));  
   return retrySubprocess;
 
 }
@@ -190,8 +191,8 @@ const restore = async function ({
   }
 
   const subprocess = execa(pgRestorePath, args, {});
-  subprocess.stdout.on('data', data => checkError(data, { createMethod }));
-  subprocess.stderr.on('data', data => checkError(data, { createMethod }));
+  subprocess.stdout.on('data', data => checkError(data, { dbname, createMethod }));
+  subprocess.stderr.on('data', data => checkError(data, { dbname, createMethod }));
 
   let result = null;
   try {
@@ -208,7 +209,7 @@ const restore = async function ({
 
       return createDatabaseAndRetry({
         filename: pgRestorePath,
-        args: { host, port, dbname, username, password, createPsqlWith },
+        args: { host, port, dbname, username, password, createMethod, createPsqlWith },
         execaArgs: args
       });
 
