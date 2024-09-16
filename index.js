@@ -77,17 +77,23 @@ const dump = function ({
   }
 
   const subprocess = execa(pgDumpPath, args, {});
-
-  subprocess.stdout.on('data', (data) => {
-    console.log(data.toString().trim());
-  });
-
-  subprocess.stderr.on('data', (data) => {
-    console.info(data.toString().trim());
-  });
-
+  subprocess.stdout.on('data', checkError);
+  subprocess.stderr.on('data', checkError);
   return subprocess; 
+
 };
+ 
+const checkError = (data) => {
+
+  const message = data.toString().trim();
+  if (message.includes('error:')) {
+    console.error(message);
+    throw new Error(message);
+  } else {
+    console.info(message);
+  }
+
+}
 
 const createDatabaseAndRetry = async function (params) {
 
@@ -113,13 +119,8 @@ const createDatabaseAndRetry = async function (params) {
   await client.end();
 
   const retrySubprocess = execa(pgRestorePath, execaArgs, {});
-  retrySubprocess.stdout.on('data', (data) => {
-    console.log(data.toString().trim());
-  });
-  retrySubprocess.stderr.on('data', (data) => {
-    console.info(data.toString().trim());
-  });
-
+  retrySubprocess.stdout.on('data', checkError);
+  retrySubprocess.stderr.on('data', checkError);  
   return retrySubprocess;
 
 }
@@ -186,14 +187,8 @@ const restore = async function ({
   }
 
   const subprocess = execa(pgRestorePath, args, {});
-
-  subprocess.stdout.on('data', (data) => {
-    console.log(data.toString().trim());
-  });
-
-  subprocess.stderr.on('data', (data) => {
-    console.info(data.toString().trim());
-  });
+  subprocess.stdout.on('data', checkError);
+  subprocess.stderr.on('data', checkError); 
 
   let result = null;
   try {
