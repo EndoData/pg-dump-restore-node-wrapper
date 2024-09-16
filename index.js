@@ -203,7 +203,8 @@ const restore = async function ({
     if (error.exitCode !== 0 &&
       error.stderr.startsWith("pg_restore: error:") &&
       error.stderr.endsWith("does not exist") &&
-      create) {
+      create &&
+      (createMethod === 'auto' || createMethod === 'psql')) {
 
       return createDatabaseAndRetry({
         filename: pgRestorePath,
@@ -213,6 +214,7 @@ const restore = async function ({
 
     } else {
 
+      console.error(error.message);
       return result
 
     }
