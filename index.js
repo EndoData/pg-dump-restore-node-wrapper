@@ -81,6 +81,7 @@ const restore = function ({
   filename,
   clean,
   create,
+  disableTriggers
 }) {
   let args = [];
   if (password) {
@@ -120,6 +121,9 @@ const restore = function ({
   }
   if (create) {
     args.push("--create");
+  } 
+  if (disableTriggers) {
+    args.push("--disable-triggers");
   }
   if (!filename) {
     throw new Error("Needs filename in the options");
