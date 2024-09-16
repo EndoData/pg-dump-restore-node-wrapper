@@ -87,8 +87,7 @@ const checkError = (data) => {
 
   const message = data.toString().trim();
   if (message.includes('error:')) {
-    console.error(message);
-    throw new Error(message);
+    console.error(message); 
   } else {
     console.info(message);
   }
