@@ -201,7 +201,7 @@ const restore = async function ({
   } catch (error) {
 
     if (error.exitCode !== 0 &&
-      error.stderr.startsWith("pg_restore: error:") &&
+      error.stderr.indexOf("pg_restore: error:") >=0 &&
       error.stderr.endsWith("does not exist") &&
       create &&
       (createMethod === 'auto' || createMethod === 'psql')) {
