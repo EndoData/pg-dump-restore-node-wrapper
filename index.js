@@ -83,11 +83,15 @@ const dump = function ({
 
 };
  
-const checkError = (data) => {
+const checkError = (data, args) => {
 
   const message = data.toString().trim();
   if (message.includes('error:')) {
-    console.error(message); 
+    if ((args?.createMethod == 'auto' || args?.createMethod == 'psql') && message.includes('already exists')) {
+      console.info(`Trying to create ${dbname} using psql...`);
+    } else {
+      console.error(message);
+    }
   } else {
     console.info(message);
   }
@@ -186,8 +190,8 @@ const restore = async function ({
   }
 
   const subprocess = execa(pgRestorePath, args, {});
-  subprocess.stdout.on('data', checkError);
-  subprocess.stderr.on('data', checkError); 
+  subprocess.stdout.on('data', data => checkError(data, { createMethod }));
+  subprocess.stderr.on('data', data => checkError(data, { createMethod }));
 
   let result = null;
   try {
