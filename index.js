@@ -87,7 +87,7 @@ const checkError = (data, args) => {
 
   const message = data.toString().trim();
   if (message.includes('error:')) {
-    if ((args?.createMethod == 'auto' || args?.createMethod == 'psql') && message.includes('already exists')) {
+    if ((args?.createMethod == 'auto' || args?.createMethod == 'psql') && !message.includes('already exists')) {
       console.info(`Trying to create ${dbname} using psql...`);
     } else {
       console.error(message);
