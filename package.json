@@ -10,6 +10,12 @@
     "registry":"https://npm.pkg.github.com"
   },
   "author": "Jeremy Dahan",
+  "contributors": [
+    {
+      "name": "Edelcio Molina",
+      "email": "edelciomolina@gmail.com"
+    } 
+  ],
   "license": "MIT",
   "dependencies": {
     "execa": "^4.0.0",

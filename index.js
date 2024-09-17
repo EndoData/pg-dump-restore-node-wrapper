@@ -1,6 +1,7 @@
 const execa = require("execa");
 const path = require("path");
 const { Client } = require("pg");
+const compare = require('./compare');
 
 let os = process.platform === "win32" ? "win" : "macos";
 
@@ -223,4 +224,4 @@ const restore = async function ({
 
 };
 
-module.exports = { dump, restore, pgRestorePath, pgDumpPath };
+module.exports = { dump, restore, compare, pgRestorePath, pgDumpPath };

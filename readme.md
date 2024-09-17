@@ -10,6 +10,7 @@ A thin CLI wrapper is also provided.
 import pgDumpRestore from "pg-dump-restore-node-wrapper";
 
 async function main() {
+
   const { stdout, stderr } = await pgDumpRestore.dump({
     port, // defaults to 5432
     host,
@@ -36,6 +37,23 @@ async function main() {
     createMethod: 'pg_restore', // defaults to 'pg_restore'. The options are 'auto', 'psql' and 'pg_restore'
     createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if createMethod is psql)
   }); // outputs an execa object
+
+ const result = await pgDumpRestore.compare({
+      source: {
+          host,
+          user,
+          password,
+          port, // defaults to 5432
+          ssl // example: { rejectUnauthorized: false }
+      },
+      target: {
+          host,
+          user,
+          password,
+          port // defaults to 5432
+      }
+  }); // outputs an detailed object from both databases
+
 }
 ```
 
