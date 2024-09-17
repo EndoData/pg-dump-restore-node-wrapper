@@ -15,12 +15,10 @@ async function main() {
     host,
     dbname,
     username,
-    verbose: true, // defaults to false
     password,
     file: "./test.pgdump",
-    format, // defaults to 'c', 
-    createMethod: 'pg_restore', // defaults to 'pg_restore'. The options are 'auto', 'psql' and 'pg_restore'
-    createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if createMethod is psql)
+    verbose: true, // defaults to false
+    format // defaults to 'c'
   }); // outputs an execa object
 
   const { stdout, stderr } = await pgDumpRestore.restore({
@@ -29,10 +27,14 @@ async function main() {
     dbname,
     username,
     password,
-    verbose: true, // defaults to false
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
+    verbose: true, // defaults to false
+    ifExists, // defaults to false
+    disableTriggers, // defaults to false
     clean, // defaults to false
     create, // defaults to false
+    createMethod: 'pg_restore', // defaults to 'pg_restore'. The options are 'auto', 'psql' and 'pg_restore'
+    createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if createMethod is psql)
   }); // outputs an execa object
 }
 ```
