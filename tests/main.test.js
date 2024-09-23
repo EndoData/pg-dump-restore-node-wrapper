@@ -4,7 +4,8 @@ const fs = require("fs-extra");
 
 describe("Can dump and restore database", () => {
   beforeAll(async () => {
-    await database.sequelize.sync({ force: true });
+    await database.dropDatabaseIfExists();
+    await database.createDatabase();
     await database.populate();
   });
   describe("Can dump", () => {
@@ -20,14 +21,29 @@ describe("Can dump and restore database", () => {
   describe("Can restore", () => {
     test("can restore database", async () => {
       expect.assertions(1);
-      await database.sequelize.drop();
+      await database.dropDatabaseIfExists();
       await pgDumpRestore.restore({
         ...database.CREDENTIALS,
         filename: "./test.pgdump",
       });
-      allPatients = await database.Patient.findAll();
-      expect(allPatients.length).toBe(1);
+      allUsers = await database.getUsers();
+      expect(allUsers.length).toBe(1);
     });
+  });
+  test("can restore database with create (psql)", async () => {
+
+    await database.dropDatabaseIfExists();
+    await pgDumpRestore.restore({
+      ...database.CREDENTIALS,
+      filename: "./test.pgdump",
+      create: true,
+      createMethod: 'psql',
+      createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';`
+    });
+    allUsers = await database.getUsers();
+    expect(allUsers.length).toBe(1);
+    expect(await database.checkLCCollate()).equal('en-US');
+
   });
   afterAll(async () => {
     await fs.remove("./test.pgdump");

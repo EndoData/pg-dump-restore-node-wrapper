@@ -1,6 +1,8 @@
 const Sequelize = require("sequelize");
 require("pg");
 
+let Users;
+
 const CREDENTIALS = {
   host: "127.0.0.1",
   port: 5432,
@@ -10,38 +12,94 @@ const CREDENTIALS = {
 };
 
 let databaseConfig = {
-  logging: () => {},
+  logging: () => { },
   dialect: "postgres",
   host: CREDENTIALS.host,
-  database: CREDENTIALS.dbname,
   username: CREDENTIALS.username,
   port: CREDENTIALS.port,
   password: CREDENTIALS.password,
 };
 
-let sequelize = new Sequelize(databaseConfig);
+let sequelizePostgres = new Sequelize({ dialect: databaseConfig.dialect });
+let sequelizeTest = new Sequelize({ dialect: databaseConfig.dialect });
 
-const Patient = sequelize.define(
-  "patient",
-  {
-    id: {
-      type: Sequelize.STRING,
-      primaryKey: true,
-      allowNull: false,
+const openDatabasePostgress = async () => {
+
+  sequelizePostgres = new Sequelize({ ...databaseConfig, database: 'postgres' });
+  await sequelizePostgres.authenticate();
+
+}
+
+const openDatabaseTest = async () => {
+
+  sequelizeTest = new Sequelize({ ...databaseConfig, database: CREDENTIALS.dbname });
+  await sequelizeTest.authenticate();
+
+  Users = sequelizeTest.define(
+    "Users",
+    {
+      id: {
+        type: Sequelize.STRING,
+        primaryKey: true,
+        allowNull: false,
+      },
+      data: { type: Sequelize.JSON },
+      misc: { type: Sequelize.JSON },
     },
-    data: { type: Sequelize.JSON },
-    misc: { type: Sequelize.JSON },
-  },
-  {
-    createdAt: "created_at",
-    updatedAt: "updated_at",
-    deletedAt: "deleted_at",
-    paranoid: true,
-  }
-);
+    {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      deletedAt: "deleted_at",
+      paranoid: true,
+    }
+  );
+  await Users.sync({ force: true });
+
+}
+
+const closeDatabases = async () => {
+
+  await sequelizePostgres.close();
+  await sequelizeTest.close();
+
+}
+
+const killAllConnections = async () => {
+
+  await sequelizePostgres.query(`
+    SELECT pg_terminate_backend(pid)
+    FROM pg_stat_activity
+    WHERE datname = '${CREDENTIALS.dbname}'
+    AND pid <> pg_backend_pid();
+  `);
+
+}
+
+const dropDatabaseIfExists = async () => {
+
+  await openDatabasePostgress()
+  await killAllConnections()
+  await sequelizePostgres.query(`DROP DATABASE IF EXISTS ${CREDENTIALS.dbname}`);
+  await closeDatabases()
+
+}
+
+const createDatabase = async () => {
+
+  await openDatabasePostgress()
+  await sequelizePostgres.query(`
+    CREATE DATABASE ${CREDENTIALS.dbname}
+    WITH TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';
+  `);
+  await sequelizePostgres.sync({ force: true });
+  await closeDatabases()
+
+}
 
 const populate = async () => {
-  let patient2 = await Patient.create(
+
+  await openDatabaseTest()
+  await Users.create(
     {
       id: "p4567",
       data: { wow: 1 },
@@ -49,6 +107,37 @@ const populate = async () => {
     },
     { user_id: "ME" }
   );
+  await closeDatabases()
+
 };
 
-module.exports = { Patient, sequelize, populate, CREDENTIALS };
+const getUsers = async () => {
+
+  await openDatabaseTest()
+  return await Users.findAll();
+
+}
+
+async function checkLCCollate() {
+
+  await openDatabaseTest()
+  const [result] = await sequelizeTest.query(`
+    SELECT datcollate 
+    FROM pg_database 
+    WHERE datname = '${CREDENTIALS.dbname}'
+  `);
+  await closeDatabases()
+
+  const lcCollate = result[0].datcollate;
+  return lcCollate;
+}
+
+module.exports = {
+  getUsers,
+  sequelize: sequelizeTest,
+  createDatabase,
+  dropDatabaseIfExists,
+  populate,
+  checkLCCollate,
+  CREDENTIALS
+};
