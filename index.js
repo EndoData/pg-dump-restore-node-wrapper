@@ -85,7 +85,8 @@ const restore = async function ({
   filename,
   clean,
   create,
-  createMethod = 'pg_restore'
+  createMethod = 'pg_restore',
+  createPsqlWith = ''
 }) {
   let args = [];
   if (password) {
@@ -137,7 +138,20 @@ const restore = async function ({
   let result = null;
   try {
 
-    return await subprocess;
+    if (create && createMethod === 'psql') {
+
+      return await createDatabaseAndRetry({
+        filename: pgRestorePath,
+        args: { host, port, dbname, username, password, create, createMethod, createPsqlWith },
+        execaArgs: args
+      });
+
+    } else {
+
+      return await subprocess;
+
+    }
+
 
   } catch (error) {
 
