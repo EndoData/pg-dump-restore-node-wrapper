@@ -27,6 +27,7 @@ async function main() {
     username,
     password,
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
+    disableTriggers, // defaults to false
     clean, // defaults to false
     create, // defaults to false
   }); // outputs an execa object
