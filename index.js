@@ -27,7 +27,6 @@ const dump = function ({
   dbname,
   username,
   password,
-  verbose,
   file,
   format = "c",
 }) {
@@ -72,75 +71,22 @@ const dump = function ({
     args.push("--format");
     args.push(format);
   }
-  if (verbose) {
-    args.push("--verbose");
-  }
-
   const subprocess = execa(pgDumpPath, args, {});
   subprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
   subprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));
-  return subprocess; 
-
+  return subprocess;
 };
- 
-const checkError = (data, args) => {
-
-  const message = data.toString().trim();
-  if (message.includes('error:')) {
-    if (!(args?.create && (args?.createMethod == 'auto' || args?.createMethod == 'psql') && !message.includes('already exists'))) { 
-      console.error(message);
-    }
-  } else {
-    console.info(message);
-  }
-
-}
-
-const createDatabaseAndRetry = async function (params) {
-
-  const dbname = params.args.dbname;
-  const pgRestorePath = params.filename;
-  const args = params.args;
-  const execaArgs = params.execaArgs;
-  const create = params.args.create;
-  const createMethod = params.args.createMethod;
-  const createPsqlWith = params.args.createPsqlWith;
-
-  console.info(`Trying to create ${args?.dbname} using psql...`);
-  
-  const client = new Client({
-    host: args.host,
-    port: args.port,
-    database: 'postgres',
-    user: args.username,
-    password: args.password
-  });
-
-  await client.connect();
-  await client.query(`CREATE DATABASE ${dbname}${createPsqlWith ? ' WITH ' + createPsqlWith : ''};`);
-  await client.end();
-  
-  console.info(`Database ${dbname} created successfully. Continuing with pg_restore...`);
-  const retrySubprocess = execa(pgRestorePath, { ...execaArgs, create: false, clean: false }, {});
-  retrySubprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
-  retrySubprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));  
-  return await retrySubprocess;
-
-}
-
 const restore = async function ({
   port = 5432,
   host,
   dbname,
   username,
   password,
-  verbose,
   filename,
   clean,
   create,
   createMethod = 'pg_restore'
 }) {
- 
   let args = [];
   if (password) {
     if (!(username && password && host && port && dbname)) {
@@ -184,11 +130,6 @@ const restore = async function ({
     throw new Error("Needs filename in the options");
   }
   args.push(filename);
-  
-  if (verbose) {
-    args.push("--verbose");
-  }
-
   const subprocess = execa(pgRestorePath, args, {});
   subprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
   subprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));
@@ -201,7 +142,7 @@ const restore = async function ({
   } catch (error) {
 
     if (error.exitCode !== 0 &&
-      error.stderr.indexOf("pg_restore: error:") >=0 &&
+      error.stderr.indexOf("pg_restore: error:") >= 0 &&
       error.stderr.endsWith("does not exist") &&
       create &&
       (createMethod === 'auto' || createMethod === 'psql')) {
@@ -222,5 +163,50 @@ const restore = async function ({
   }
 
 };
+
+const checkError = (data, args) => {
+
+  const message = data.toString().trim();
+  if (message.includes('error:')) {
+    if (!(args?.create && (args?.createMethod == 'auto' || args?.createMethod == 'psql') && !message.includes('already exists'))) {
+      console.error(message);
+    }
+  } else {
+    console.info(message);
+  }
+
+}
+
+const createDatabaseAndRetry = async function (params) {
+
+  const dbname = params.args.dbname;
+  const pgRestorePath = params.filename;
+  const args = params.args;
+  const execaArgs = params.execaArgs;
+  const create = params.args.create;
+  const createMethod = params.args.createMethod;
+  const createPsqlWith = params.args.createPsqlWith;
+
+  console.info(`Trying to create ${args?.dbname} using psql...`);
+
+  const client = new Client({
+    host: args.host,
+    port: args.port,
+    database: 'postgres',
+    user: args.username,
+    password: args.password
+  });
+
+  await client.connect();
+  await client.query(`CREATE DATABASE ${dbname}${createPsqlWith ? ' WITH ' + createPsqlWith : ''};`);
+  await client.end();
+
+  console.info(`Database ${dbname} created successfully. Continuing with pg_restore...`);
+  const retrySubprocess = execa(pgRestorePath, { ...execaArgs, create: false, clean: false }, {});
+  retrySubprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
+  retrySubprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));
+  return await retrySubprocess;
+
+}
 
 module.exports = { dump, restore, pgRestorePath, pgDumpPath };
