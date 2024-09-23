@@ -1,24 +1,23 @@
 const execa = require("execa");
 const path = require("path");
 
-let os = process.platform === "win32" ? "win" : "macos";
 
-let binariesPath = path.join(
-  __dirname.replace("app.asar", "app.asar.unpacked"),
-  "bin",
-  os,
-  "bin"
-);
 
-let pgRestorePath = path.join(
-  binariesPath,
-  os === "win" ? "pg_restore.exe" : "pg_restore"
-);
+const binariesPath = (version, type) => {
 
-let pgDumpPath = path.join(
-  binariesPath,
-  os === "win" ? "pg_dump.exe" : "pg_dump"
-);
+  let os = process.platform === "win32" ? "win" : "macos";
+  let subFolder = process.platform === "win32" ? "" : "bin";
+
+  return path.join(
+    __dirname.replace("app.asar", "app.asar.unpacked"),
+    "bin",
+    os,
+    version,
+    subFolder,
+    os === "win" ? `${type}.exe` : type,
+  );
+
+}
 
 const dump = function ({
   port = 5432,
@@ -26,10 +25,13 @@ const dump = function ({
   dbname,
   username,
   password,
+  version = '17rc1',
   file,
   format = "c",
 }) {
   let args = [];
+  let pgDumpPath = binariesPath(version, 'pg_dump');
+
   if (password) {
     if (!(username && password && host && port && dbname)) {
       throw new Error(
@@ -78,11 +80,13 @@ const restore = function ({
   dbname,
   username,
   password,
+  version = '17rc1',
   filename,
   clean,
   create,
 }) {
   let args = [];
+  let pgRestorePath = binariesPath(version, 'pg_restore');;
   if (password) {
     if (!(username && password && host && port && dbname)) {
       throw new Error(
@@ -128,4 +132,4 @@ const restore = function ({
   return execa(pgRestorePath, args, {});
 };
 
-module.exports = { dump, restore, pgRestorePath, pgDumpPath };
+module.exports = { dump, restore };
