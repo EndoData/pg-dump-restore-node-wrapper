@@ -26,6 +26,7 @@ const dump = function ({
   dbname,
   username,
   password,
+  verbose,
   file,
   format = "c",
 }) {
@@ -70,7 +71,15 @@ const dump = function ({
     args.push("--format");
     args.push(format);
   }
-  return execa(pgDumpPath, args, {});
+  if (verbose) {
+    args.push("--verbose");
+  }
+
+  const subprocess = execa(pgDumpPath, args, {});
+  subprocess.stdout.on('data', checkError);
+  subprocess.stderr.on('data', checkError);
+
+  return subprocess;
 };
 const restore = function ({
   port = 5432,
@@ -78,6 +87,7 @@ const restore = function ({
   dbname,
   username,
   password,
+  verbose,
   filename,
   clean,
   create,
@@ -131,7 +141,27 @@ const restore = function ({
     throw new Error("Needs filename in the options");
   }
   args.push(filename);
-  return execa(pgRestorePath, args, {});
+
+  if (verbose) {
+    args.push("--verbose");
+  }
+
+  const subprocess = execa(pgRestorePath, args, {});
+  subprocess.stdout.on('data', checkError);
+  subprocess.stderr.on('data', checkError);
+
+  return subprocess;
 };
+
+const checkError = (data) => {
+
+  const message = data.toString().trim();
+  if (message.includes('error:')) {
+    console.error(message);
+  } else {
+    console.info(message);
+  }
+
+}
 
 module.exports = { dump, restore, pgRestorePath, pgDumpPath };
