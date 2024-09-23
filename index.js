@@ -72,8 +72,8 @@ const dump = function ({
     args.push(format);
   }
   const subprocess = execa(pgDumpPath, args, {});
-  subprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
-  subprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));
+  subprocess.stdout.on('data', data => checkError(data, { dbname }));
+  subprocess.stderr.on('data', data => checkError(data, { dbname }));
   return subprocess;
 };
 const restore = async function ({
