@@ -21,6 +21,7 @@ test("should not restore the database when it already exists", async () => {
 
   try {
 
+    expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
     await pgDumpRestore.restore({
       ...database.CREDENTIALS,
       filename: "./test.pgdump",
@@ -37,6 +38,7 @@ test("should not restore the database when it already exists", async () => {
 });
 test("should restore database when already exists if clean requested", async () => {
 
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await pgDumpRestore.restore({
     ...database.CREDENTIALS,
     filename: "./test.pgdump",
@@ -48,6 +50,7 @@ test("should restore database when already exists if clean requested", async () 
 });
 test("should restore database create parameters (createWith)", async () => {
 
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
   await pgDumpRestore.restore({
     ...database.CREDENTIALS,
@@ -64,6 +67,7 @@ test("should restore database create parameters (createWith)", async () => {
 });
 test("Should restore the bank by maintaining existing tables", async () => {
 
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
   await database.createDatabase();
   await database.createAndPopuleExtraTableMock();
@@ -78,6 +82,7 @@ test("Should restore the bank by maintaining existing tables", async () => {
 });
 test("Should restore the bank eliminating existing tables", async () => {
 
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
   await database.createDatabase();
   await database.createAndPopuleExtraTableMock();
@@ -105,6 +110,7 @@ test("should dump database (with verbose)", async () => {
 });
 test("should restore database (with verbose)", async () => {
 
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
   const log = await pgDumpRestore.restore({
     ...database.CREDENTIALS,
