@@ -87,10 +87,15 @@ const restore = async function ({
   filename,
   clean,
   create,
+  disableTriggers
   createWith = ''
 }) {
   let args = [];
 
+  if (disableTriggers) {
+    args.push("--disable-triggers");
+  }
+  
   if (password) {
     if (!(username && password && host && port && dbname)) {
       throw new Error(
