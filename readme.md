@@ -18,6 +18,11 @@ async function main() {
     password,
     file: "./test.pgdump",
     format, // defaults to 'c'
+    blobs = true, // default behaviour of pg_dump unless schema(s) specified
+    schema = "my_user_schema", // include in dump specified schema(s)
+    "exclude-schema" = ["public", "another_user_schema"], // exclude from dump specified schema(s)
+    table = "my_user_schema.*", // include matching schema table(s) in example of pg_dump wildcard support
+    "exclude-table" = ["my_user_schema.table_to_skip", "*.metadata"], // exclude specific table(s) or wildcards, overrides inclusion
   }); // outputs an execa object
 
   const { stdout, stderr } = await pgDumpRestore.restore({
