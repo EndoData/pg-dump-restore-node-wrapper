@@ -28,9 +28,8 @@ async function main() {
     password,
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
     clean, // defaults to false
-    create, // defaults to false 
-    createMethod: 'pg_restore', // defaults to 'pg_restore'. The options are 'auto', 'psql' and 'pg_restore'
-    createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if createMethod is psql)
+    create, // defaults to false  
+    createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if create is true)
   }); // outputs an execa object
 }
 ```
