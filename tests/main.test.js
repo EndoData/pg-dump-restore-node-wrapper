@@ -8,15 +8,17 @@ beforeAll(async () => {
   await database.createAndPopuleTableMock();
 });
 test("should dump database", async () => {
+
   expect.assertions(1);
   await pgDumpRestore.dump({
     ...database.CREDENTIALS,
     file: "./test.pgdump",
   });
   expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+
 });
 test("should not restore the database when it already exists", async () => {
-  expect.assertions(1);
+
   try {
 
     await pgDumpRestore.restore({
@@ -34,7 +36,6 @@ test("should not restore the database when it already exists", async () => {
 
 });
 test("should restore database when already exists if clean requested", async () => {
-  expect.assertions(1);
 
   await pgDumpRestore.restore({
     ...database.CREDENTIALS,
@@ -88,6 +89,32 @@ test("Should restore the bank eliminating existing tables", async () => {
   const allDataMock = await database.getDataMock();
   const allDataMockExtra = await database.getDataMockExtra();
   expect(allDataMock.length + allDataMockExtra.length).toBe(1);
+
+});
+
+test("should dump database (with verbose)", async () => {
+
+  const log = await pgDumpRestore.dump({
+    ...database.CREDENTIALS,
+    file: "./test.pgdump",
+    verbose: true
+  });
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  expect(log.stderr.includes('pg_dump:')).toBeTruthy();
+
+});
+test("should restore database (with verbose)", async () => {
+
+  await database.dropDatabaseIfExists();
+  const log = await pgDumpRestore.restore({
+    ...database.CREDENTIALS,
+    filename: "./test.pgdump",
+    create: true,
+    verbose: true
+  });
+  const allDataMock = await database.getDataMock();
+  expect(allDataMock.length).toBe(1);
+  expect(log.stderr.includes('pg_restore:')).toBeTruthy();
 
 });
 afterAll(async () => {

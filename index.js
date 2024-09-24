@@ -28,6 +28,7 @@ const dump = function ({
   dbname,
   username,
   password,
+  verbose,
   file,
   format = "c",
 }) {
@@ -72,6 +73,10 @@ const dump = function ({
     args.push("--format");
     args.push(format);
   }
+  if (verbose) {
+    args.push("--verbose");
+  }
+
   const subprocess = execa(pgDumpPath, args, {});
   subprocess.stdout.on('data', data => checkError(data, { dbname }));
   subprocess.stderr.on('data', data => checkError(data, { dbname }));
@@ -133,6 +138,10 @@ const restore = async function ({
   }
   args.push(filename);
 
+  if (verbose) {
+    args.push("--verbose");
+  }
+
   // As mentioned in Postgres documentation, Clean should clean the database;
   // But it does not work in some versions of the pg_restore, so the clean is done manually
   if (clean) {
@@ -163,8 +172,8 @@ const restore = async function ({
   }
 
   const subprocess = execa(pgRestorePath, args, {});
-  subprocess.stdout.on('data', data => checkError(data, { dbname, create, verbose }));
-  subprocess.stderr.on('data', data => checkError(data, { dbname, create, verbose }));
+  subprocess.stdout.on('data', data => checkError(data, { dbname, create }));
+  subprocess.stderr.on('data', data => checkError(data, { dbname, create }));
   return subprocess;
 
 };
@@ -177,9 +186,7 @@ const checkError = (data, args) => {
       console.error(message);
     }
   } else {
-    if (args?.verbose) {
-      console.info(message);
-    }
+    console.info(message);
   }
 
 }
