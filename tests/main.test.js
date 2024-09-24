@@ -45,7 +45,7 @@ test("should restore database when already exists if clean requested", async () 
   expect(true).toBe(true);
 
 });
-test("shoud restore database create parameters (createWith)", async () => {
+test("should restore database create parameters (createWith)", async () => {
 
   await database.dropDatabaseIfExists();
   await pgDumpRestore.restore({
