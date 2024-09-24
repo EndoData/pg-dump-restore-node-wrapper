@@ -1,6 +1,7 @@
 const execa = require("execa");
 const path = require("path");
 const { Client } = require("pg");
+const { dropDatabaseIfExists } = require("./tests/database.mock");
 
 let os = process.platform === "win32" ? "win" : "macos";
 
@@ -82,13 +83,14 @@ const restore = async function ({
   dbname,
   username,
   password,
+  verbose,
   filename,
   clean,
   create,
-  createMethod = 'pg_restore',
-  createPsqlWith = ''
+  createWith = ''
 }) {
   let args = [];
+
   if (password) {
     if (!(username && password && host && port && dbname)) {
       throw new Error(
@@ -121,60 +123,44 @@ const restore = async function ({
     }
   }
 
-  if (clean) {
-    args.push("--clean");
-  }
-  if (create && (createMethod === 'auto' || createMethod === 'pg_restore')) {
-    args.push("--create");
-  }
   if (!filename) {
     throw new Error("Needs filename in the options");
   }
   args.push(filename);
-  const subprocess = execa(pgRestorePath, args, {});
-  subprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
-  subprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));
 
-  let result = null;
-  try {
-
-    if (create && createMethod === 'psql') {
-
-      return await createDatabaseAndRetry({
-        filename: pgRestorePath,
-        args: { host, port, dbname, username, password, create, createMethod, createPsqlWith },
-        execaArgs: args
-      });
-
-    } else {
-
-      return await subprocess;
-
-    }
-
-
-  } catch (error) {
-
-    if (error.exitCode !== 0 &&
-      error.stderr.indexOf("pg_restore: error:") >= 0 &&
-      error.stderr.endsWith("does not exist") &&
-      create &&
-      (createMethod === 'auto' || createMethod === 'psql')) {
-
-      return await createDatabaseAndRetry({
-        filename: pgRestorePath,
-        args: { host, port, dbname, username, password, create, createMethod, createPsqlWith },
-        execaArgs: args
-      });
-
-    } else {
-
-      console.error(error.message);
-      return result
-
-    }
+  // As mentioned in Postgres documentation, Clean should clean the database;
+  // But it does not work in some versions of the pg_restore, so the clean is done manually
+  if (clean) {
+    await cleanDatabase({
+      args: { host, port, dbname, username, password }
+    })
 
   }
+
+  // As mentioned in Postgres documentation, 'Create' with 'Clean' makes a drop
+  // throughout the bank and then recreates it, so we are here manually eliminating it
+  // so that below is created.
+  // See https://www.postgresql.org/docs/current/app-pgdump.html
+  if (clean && create) {
+    await dropDatabaseIfExists()
+  }
+
+  // As mentioned in Postgres documentation, Create should clean the database;
+  // But it does not work in some versions of the pg_restore, so Create is done manually 
+  if (create) {
+
+    await createDatabase({
+      filename: pgRestorePath,
+      args: { host, port, dbname, username, password, createWith, verbose },
+      execaArgs: args
+    });
+
+  }
+
+  const subprocess = execa(pgRestorePath, args, {});
+  subprocess.stdout.on('data', data => checkError(data, { dbname, create, verbose }));
+  subprocess.stderr.on('data', data => checkError(data, { dbname, create, verbose }));
+  return subprocess;
 
 };
 
@@ -182,26 +168,63 @@ const checkError = (data, args) => {
 
   const message = data.toString().trim();
   if (message.includes('error:')) {
-    if (!(args?.create && (args?.createMethod == 'auto' || args?.createMethod == 'psql') && !message.includes('already exists'))) {
+    if (!(args?.create && !message.includes('already exists'))) {
       console.error(message);
     }
   } else {
-    console.info(message);
+    if (args?.verbose) {
+      console.info(message);
+    }
   }
 
 }
 
-const createDatabaseAndRetry = async function (params) {
+
+const cleanDatabase = async function (params) {
+
+  const args = params.args;
+  const verbose = params.args.verbose;
+
+  if (verbose) {
+    console.info(`Cleaning ${args?.dbname} using psql...`);
+  }
+
+  const client = new Client({
+    host: args.host,
+    port: args.port,
+    database: args.dbname,
+    user: args.username,
+    password: args.password
+  });
+
+  await client.connect();
+  await client.query(`
+      DO $$ DECLARE
+          r RECORD;
+      BEGIN
+          FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+              EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+          END LOOP;
+      END $$; 
+  `);
+  await client.end();
+
+  if (verbose) {
+    console.info(`Database ${dbname} cleaned successfully.`);
+  }
+
+}
+
+const createDatabase = async function (params) {
 
   const dbname = params.args.dbname;
-  const pgRestorePath = params.filename;
   const args = params.args;
-  const execaArgs = params.execaArgs;
-  const create = params.args.create;
-  const createMethod = params.args.createMethod;
-  const createPsqlWith = params.args.createPsqlWith;
+  const createWith = params.args.createWith;
+  const verbose = params.args.verbose;
 
-  console.info(`Trying to create ${args?.dbname} using psql...`);
+  if (verbose) {
+    console.info(`Creating ${args?.dbname} using psql...`);
+  }
 
   const client = new Client({
     host: args.host,
@@ -212,14 +235,12 @@ const createDatabaseAndRetry = async function (params) {
   });
 
   await client.connect();
-  await client.query(`CREATE DATABASE ${dbname}${createPsqlWith ? ' WITH ' + createPsqlWith : ''};`);
+  await client.query(`CREATE DATABASE ${dbname}${createWith ? ' WITH ' + createWith : ''};`);
   await client.end();
 
-  console.info(`Database ${dbname} created successfully. Continuing with pg_restore...`);
-  const retrySubprocess = execa(pgRestorePath, { ...execaArgs, create: false, clean: false }, {});
-  retrySubprocess.stdout.on('data', data => checkError(data, { dbname, create, createMethod }));
-  retrySubprocess.stderr.on('data', data => checkError(data, { dbname, create, createMethod }));
-  return await retrySubprocess;
+  if (verbose) {
+    console.info(`Database ${dbname} created successfully.`);
+  }
 
 }
 
