@@ -1,7 +1,8 @@
 const Sequelize = require("sequelize");
 require("pg");
 
-let Users;
+let DataMock;
+let DataMockExtra;
 
 const CREDENTIALS = {
   host: "127.0.0.1",
@@ -35,8 +36,12 @@ const openDatabaseTest = async () => {
   sequelizeTest = new Sequelize({ ...databaseConfig, database: CREDENTIALS.dbname });
   await sequelizeTest.authenticate();
 
-  Users = sequelizeTest.define(
-    "Users",
+}
+
+const prepareDataMock = async (force) => {
+
+  DataMock = sequelizeTest.define(
+    "DataMock",
     {
       id: {
         type: Sequelize.STRING,
@@ -51,9 +56,68 @@ const openDatabaseTest = async () => {
       updatedAt: "updated_at",
       deletedAt: "deleted_at",
       paranoid: true,
+      freezeTableName: true
     }
   );
-  await Users.sync({ force: true });
+  await DataMock.sync({ force });
+
+}
+
+const prepareDataMockExtra = async (force) => {
+
+  DataMockExtra = sequelizeTest.define(
+    "DataMockExtra",
+    {
+      id: {
+        type: Sequelize.STRING,
+        primaryKey: true,
+        allowNull: false,
+      },
+      data: { type: Sequelize.JSON },
+      misc: { type: Sequelize.JSON },
+    },
+    {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      deletedAt: "deleted_at",
+      paranoid: true,
+      freezeTableName: true
+    },
+  );
+  await DataMockExtra.sync({ force });
+
+}
+
+const createAndPopuleExtraTableMock = async () => {
+
+  await openDatabaseTest()
+  await prepareDataMockExtra(true)
+  await DataMockExtra.create(
+    {
+      id: "p1234",
+      data: { wow: 9 },
+      misc: {},
+    },
+    { user_id: "OTHER" }
+  );
+
+  await closeDatabases()
+}
+
+const createAndPopuleTableMock = async () => {
+
+  await openDatabaseTest()
+  await prepareDataMock(true)
+  await DataMock.create(
+    {
+      id: "p4567",
+      data: { wow: 1 },
+      misc: {},
+    },
+    { user_id: "ME" }
+  );
+
+  await closeDatabases()
 
 }
 
@@ -91,34 +155,27 @@ const createDatabase = async () => {
     CREATE DATABASE ${CREDENTIALS.dbname}
     WITH TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';
   `);
-  await sequelizePostgres.sync({ force: true });
   await closeDatabases()
 
 }
 
-const populate = async () => {
+const getDataMock = async () => {
 
   await openDatabaseTest()
-  await Users.create(
-    {
-      id: "p4567",
-      data: { wow: 1 },
-      misc: {},
-    },
-    { user_id: "ME" }
-  );
-  await closeDatabases()
-
-};
-
-const getUsers = async () => {
-
-  await openDatabaseTest()
-  return await Users.findAll();
+  await prepareDataMock()
+  return await DataMock.findAll();
 
 }
 
-async function checkLCCollate() {
+const getDataMockExtra = async () => {
+
+  await openDatabaseTest()
+  await prepareDataMockExtra()
+  return await DataMockExtra.findAll();
+
+}
+
+const checkLCCollate = async () => {
 
   await openDatabaseTest()
   const [result] = await sequelizeTest.query(`
@@ -133,11 +190,13 @@ async function checkLCCollate() {
 }
 
 module.exports = {
-  getUsers,
+  getDataMock,
+  getDataMockExtra,
   sequelize: sequelizeTest,
   createDatabase,
+  createAndPopuleTableMock,
+  createAndPopuleExtraTableMock,
   dropDatabaseIfExists,
-  populate,
   checkLCCollate,
   CREDENTIALS
 };
