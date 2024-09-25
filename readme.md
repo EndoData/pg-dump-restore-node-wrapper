@@ -29,6 +29,7 @@ async function main() {
     username,
     password,
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
+    disableTriggers, // defaults to false
     verbose: true, // defaults to false
     ifExists, // defaults to false
     disableTriggers, // defaults to false

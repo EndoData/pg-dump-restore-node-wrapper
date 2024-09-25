@@ -7,14 +7,14 @@
     "test": "jest"
   },
   "publishConfig": {
-    "registry":"https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   },
   "author": "Jeremy Dahan",
   "contributors": [
     {
       "name": "Edelcio Molina",
       "email": "edelciomolina@gmail.com"
-    } 
+    }
   ],
   "license": "MIT",
   "dependencies": {
