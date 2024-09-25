@@ -1,5 +1,5 @@
 const database = require("./database.mock");
-const pgDumpRestore = require("../index");
+const pgWrapper = require("../index");
 const psql = require("../lib/psql");
 const fs = require("fs-extra");
 
@@ -11,7 +11,7 @@ beforeAll(async () => {
 test("should dump database", async () => {
 
   expect.assertions(1);
-  await pgDumpRestore.dump({
+  await pgWrapper.dump({
     ...database.CREDENTIALS,
     file: "./test.pgdump",
   });
@@ -23,7 +23,7 @@ test("should not restore the database when it already exists", async () => {
   try {
 
     expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
-    await pgDumpRestore.restore({
+    await pgWrapper.restore({
       ...database.CREDENTIALS,
       filename: "./test.pgdump",
       create: true,
@@ -40,7 +40,7 @@ test("should not restore the database when it already exists", async () => {
 test("should restore database when already exists if clean requested", async () => {
 
   expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
-  await pgDumpRestore.restore({
+  await pgWrapper.restore({
     ...database.CREDENTIALS,
     filename: "./test.pgdump",
     clean: true,
@@ -53,7 +53,7 @@ test("should restore database create parameters (createWith)", async () => {
 
   expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
-  await pgDumpRestore.restore({
+  await pgWrapper.restore({
     ...database.CREDENTIALS,
     filename: "./test.pgdump",
     create: true,
@@ -72,7 +72,7 @@ test("Should restore the database by maintaining existing tables", async () => {
   await database.dropDatabaseIfExists();
   await psql.createDatabase({ args: database.CREDENTIALS })
   await database.createAndPopuleExtraTableMock();
-  await pgDumpRestore.restore({
+  await pgWrapper.restore({
     ...database.CREDENTIALS,
     filename: "./test.pgdump"
   });
@@ -87,7 +87,7 @@ test("Should restore the database eliminating existing tables", async () => {
   await database.dropDatabaseIfExists();
   await psql.createDatabase({ args: database.CREDENTIALS });
   await database.createAndPopuleExtraTableMock();
-  await pgDumpRestore.restore({
+  await pgWrapper.restore({
     ...database.CREDENTIALS,
     filename: "./test.pgdump",
     clean: true
@@ -100,7 +100,7 @@ test("Should restore the database eliminating existing tables", async () => {
 
 test("should dump database (with verbose)", async () => {
 
-  const log = await pgDumpRestore.dump({
+  const log = await pgWrapper.dump({
     ...database.CREDENTIALS,
     file: "./test.pgdump",
     verbose: true
@@ -113,7 +113,7 @@ test("should restore database (with verbose)", async () => {
 
   expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
-  const log = await pgDumpRestore.restore({
+  const log = await pgWrapper.restore({
     ...database.CREDENTIALS,
     filename: "./test.pgdump",
     create: true,

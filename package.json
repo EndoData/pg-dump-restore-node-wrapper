@@ -18,9 +18,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@types/caniuse-lite": "^1.0.5",
     "@types/pg": "^8.11.10",
-    "caniuse-lite": "^1.0.30001663",
     "execa": "^4.0.0",
     "path": "^0.12.7",
     "pg": "^8.12.0"
