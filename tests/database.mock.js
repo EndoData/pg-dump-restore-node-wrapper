@@ -1,16 +1,35 @@
 const Sequelize = require("sequelize");
 const psql = require("../lib/psql");
 
-let DataMock;
-let DataMockExtra;
+const Mocks = {}
+Mocks['Table1'] = {
+  model: null,
+  data: {
+    id: `p${Math.floor(Math.random() * 1000)}`,
+    name: `row_from_table_1`,
+    data: { wow: Math.floor(Math.random() * 1000) },
+    misc: {}
+  }
+}
+Mocks['Table2'] = {
+  model: null,
+  data: {
+    id: `p${Math.floor(Math.random() * 1000)}`,
+    name: `row_from_table_2`,
+    data: { wow: Math.floor(Math.random() * 1000) },
+    misc: {}
+  }
+}
 
 const CREDENTIALS = {
   host: "127.0.0.1",
   port: 5432,
-  dbname: "pg_dump_restore_tests",
   username: "postgres",
   password: "28F50CD7-CA87-4796-AF3F-4C161483CCE1",
 };
+const DATABASES = {
+  tests: "pg_dump_restore_tests"
+}
 
 let databaseConfig = {
   logging: () => { },
@@ -21,32 +40,27 @@ let databaseConfig = {
   password: CREDENTIALS.password,
 };
 
-let sequelizePostgres = new Sequelize({ dialect: databaseConfig.dialect });
 let sequelizeTest = new Sequelize({ dialect: databaseConfig.dialect });
 
-const openDatabasePostgress = async () => {
+const openDatabase = async (database) => {
 
-  sequelizePostgres = new Sequelize({ ...databaseConfig, database: 'postgres' });
-  await sequelizePostgres.authenticate();
-
-}
-
-const openDatabaseTest = async () => {
-
-  sequelizeTest = new Sequelize({ ...databaseConfig, database: CREDENTIALS.dbname });
+  sequelizeTest = new Sequelize({ ...databaseConfig, database });
   await sequelizeTest.authenticate();
 
 }
 
-const prepareDataMock = async (force) => {
+const prepareData = async (tableName, force) => {
 
-  DataMock = sequelizeTest.define(
-    "DataMock",
+  Mocks[tableName].model = sequelizeTest.define(
+    tableName,
     {
       id: {
         type: Sequelize.STRING,
         primaryKey: true,
         allowNull: false,
+      },
+      name: {
+        type: Sequelize.STRING,
       },
       data: { type: Sequelize.JSON },
       misc: { type: Sequelize.JSON },
@@ -59,129 +73,64 @@ const prepareDataMock = async (force) => {
       freezeTableName: true
     }
   );
-  await DataMock.sync({ force });
+  await Mocks[tableName].model.sync({ force });
 
 }
 
-const prepareDataMockExtra = async (force) => {
 
-  DataMockExtra = sequelizeTest.define(
-    "DataMockExtra",
-    {
-      id: {
-        type: Sequelize.STRING,
-        primaryKey: true,
-        allowNull: false,
-      },
-      data: { type: Sequelize.JSON },
-      misc: { type: Sequelize.JSON },
-    },
-    {
-      createdAt: "created_at",
-      updatedAt: "updated_at",
-      deletedAt: "deleted_at",
-      paranoid: true,
-      freezeTableName: true
-    },
-  );
-  await DataMockExtra.sync({ force });
+const populeWithMore = async (database, tableName) => {
+
+  await createAndPopule(database, tableName, false)
 
 }
 
-const createAndPopuleExtraTableMock = async () => {
+const createAndPopule = async (database, tableName, sync = true) => {
 
-  await openDatabaseTest()
-  await prepareDataMockExtra(true)
-  await DataMockExtra.create(
-    {
-      id: "p1234",
-      data: { wow: 9 },
-      misc: {},
-    },
-    { user_id: "OTHER" }
-  );
-
+  await openDatabase(database)
+  await prepareData(tableName, sync)
+  await Mocks[tableName].model.create(Mocks[tableName].data);
   await closeDatabases()
+
 }
 
-const createAndPopuleTableMock = async () => {
+const getData = async (database, tableName) => {
 
-  await openDatabaseTest()
-  await prepareDataMock(true)
-  await DataMock.create(
-    {
-      id: "p4567",
-      data: { wow: 1 },
-      misc: {},
-    },
-    { user_id: "ME" }
-  );
-
-  await closeDatabases()
+  await openDatabase(database)
+  await prepareData(tableName)
+  return await Mocks[tableName].model.findAll();
 
 }
 
 const closeDatabases = async () => {
 
-  await sequelizePostgres.close();
   await sequelizeTest.close();
 
 }
 
-const dropDatabaseIfExists = async () => {
+const dropDatabaseIfExists = async (database) => {
 
-  await openDatabasePostgress()
-  await psql.killAllConnections({ args: CREDENTIALS })
-  await psql.dropDatabaseIfExists({ args: CREDENTIALS })
-  await closeDatabases()
+  await psql.killAllConnections(CREDENTIALS, { dbname: database })
+  await psql.dropDatabaseIfExists(CREDENTIALS, { dbname: database })
 
 }
 
-const createDatabase = async () => {
+const createDatabase = async (database) => {
 
-  await openDatabasePostgress()
-  await psql.createDatabase({
-    args: CREDENTIALS,
-    createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';`
-  })
-  await closeDatabases()
+  await psql.createDatabase(CREDENTIALS,
+    {
+      dbname: database,
+      createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';`
+    })
 
-}
-
-const getDataMock = async () => {
-
-  await openDatabaseTest()
-  await prepareDataMock()
-  return await DataMock.findAll();
-
-}
-
-const getDataMockExtra = async () => {
-
-  await openDatabaseTest()
-  await prepareDataMockExtra()
-  return await DataMockExtra.findAll();
-
-}
-
-const checkLCCollate = async () => {
-
-  await openDatabaseTest()
-  await psql.checkLCCollate({ args: CREDENTIALS })
-  await closeDatabases()
-
-  const lcCollate = result[0].datcollate;
-  return lcCollate;
 }
 
 module.exports = {
-  getDataMock,
-  getDataMockExtra,
+  getData,
   sequelize: sequelizeTest,
   createDatabase,
   dropDatabaseIfExists,
-  createAndPopuleTableMock,
-  createAndPopuleExtraTableMock,
-  checkLCCollate,
-  CREDENTIALS
+  createAndPopule,
+  populeWithMore,
+  CREDENTIALS,
+  DATABASES
 };
