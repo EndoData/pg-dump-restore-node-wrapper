@@ -1,7 +1,6 @@
 const execa = require("execa");
 const path = require("path");
 const { Client } = require("pg");
-const { dropDatabaseIfExists } = require("./tests/database.mock");
 
 let os = process.platform === "win32" ? "win" : "macos";
 
@@ -146,7 +145,7 @@ const restore = async function ({
   // But it does not work in some versions of the pg_restore, so the clean is done manually
   if (clean) {
     await cleanDatabase({
-      args: { host, port, dbname, username, password }
+      args: { host, port, dbname, username, password, verbose }
     })
 
   }
@@ -177,6 +176,33 @@ const restore = async function ({
   return subprocess;
 
 };
+
+const dropDatabaseIfExists = async function (params) {
+
+  const args = params.args;
+  const verbose = params.args.verbose;
+
+  if (verbose) {
+    console.info(`Dropping ${args?.dbname} using psql...`);
+  }
+
+  const client = new Client({
+    host: args.host,
+    port: args.port,
+    database: 'postgres',
+    user: args.username,
+    password: args.password
+  });
+
+  await client.connect();
+  await client.query(`DROP DATABASE IF EXISTS ${args?.dbname};`);
+  await client.end();
+
+  if (verbose) {
+    console.info(`Database ${args?.dbname} dropped successfully.`);
+  }
+
+}
 
 const checkError = (data, args) => {
 
