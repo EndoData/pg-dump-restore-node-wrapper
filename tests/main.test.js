@@ -1,9 +1,10 @@
 const database = require("./database.mock");
 const pgDumpRestore = require("../index");
+const psql = require("../lib/psql");
 const fs = require("fs-extra");
 
 beforeAll(async () => {
-  await database.dropDatabaseIfExists();
+  await database.dropDatabaseIfExists({ args: database.CREDENTIALS });
   await database.createDatabase();
   await database.createAndPopuleTableMock();
 });
@@ -59,17 +60,17 @@ test("should restore database create parameters (createWith)", async () => {
     createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='C' LC_CTYPE='C';`
   });
   const allDataMock = await database.getDataMock();
-  const collate = await database.checkLCCollate()
+  const collate = await psql.checkLCCollate({ args: database.CREDENTIALS })
 
   expect(allDataMock.length).toBe(1);
   expect(collate === 'C').toBe(true);
 
 });
-test("Should restore the bank by maintaining existing tables", async () => {
+test("Should restore the database by maintaining existing tables", async () => {
 
   expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
-  await database.createDatabase();
+  await psql.createDatabase({ args: database.CREDENTIALS })
   await database.createAndPopuleExtraTableMock();
   await pgDumpRestore.restore({
     ...database.CREDENTIALS,
@@ -80,11 +81,11 @@ test("Should restore the bank by maintaining existing tables", async () => {
   expect(allDataMock.length + allDataMockExtra.length).toBe(2);
 
 });
-test("Should restore the bank eliminating existing tables", async () => {
+test("Should restore the database eliminating existing tables", async () => {
 
   expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
   await database.dropDatabaseIfExists();
-  await database.createDatabase();
+  await psql.createDatabase({ args: database.CREDENTIALS });
   await database.createAndPopuleExtraTableMock();
   await pgDumpRestore.restore({
     ...database.CREDENTIALS,

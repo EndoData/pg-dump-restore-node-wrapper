@@ -1,6 +1,7 @@
 const execa = require("execa");
 const path = require("path");
 const { Client } = require("pg");
+const psql = require("./lib/psql");
 
 let os = process.platform === "win32" ? "win" : "macos";
 
@@ -144,7 +145,7 @@ const restore = async function ({
   // As mentioned in Postgres documentation, Clean should clean the database;
   // But it does not work in some versions of the pg_restore, so the clean is done manually
   if (clean) {
-    await cleanDatabase({
+    await psql.cleanDatabase({
       args: { host, port, dbname, username, password, verbose }
     })
 
@@ -155,17 +156,17 @@ const restore = async function ({
   // so that below is created.
   // See https://www.postgresql.org/docs/current/app-pgdump.html
   if (clean && create) {
-    await dropDatabaseIfExists()
+    await psql.dropDatabaseIfExists({
+      args: { host, port, dbname, username, password, verbose }
+    })
   }
 
   // As mentioned in Postgres documentation, Create should clean the database;
   // But it does not work in some versions of the pg_restore, so Create is done manually 
   if (create) {
 
-    await createDatabase({
-      filename: pgRestorePath,
-      args: { host, port, dbname, username, password, createWith, verbose },
-      execaArgs: args
+    await psql.createDatabase({
+      args: { host, port, dbname, username, password, createWith, verbose }
     });
 
   }
@@ -177,33 +178,6 @@ const restore = async function ({
 
 };
 
-const dropDatabaseIfExists = async function (params) {
-
-  const args = params.args;
-  const verbose = params.args.verbose;
-
-  if (verbose) {
-    console.info(`Dropping ${args?.dbname} using psql...`);
-  }
-
-  const client = new Client({
-    host: args.host,
-    port: args.port,
-    database: 'postgres',
-    user: args.username,
-    password: args.password
-  });
-
-  await client.connect();
-  await client.query(`DROP DATABASE IF EXISTS ${args?.dbname};`);
-  await client.end();
-
-  if (verbose) {
-    console.info(`Database ${args?.dbname} dropped successfully.`);
-  }
-
-}
-
 const checkError = (data, args) => {
 
   const message = data.toString().trim();
@@ -213,71 +187,6 @@ const checkError = (data, args) => {
     }
   } else {
     console.info(message);
-  }
-
-}
-
-
-const cleanDatabase = async function (params) {
-
-  const args = params.args;
-  const verbose = params.args.verbose;
-
-  if (verbose) {
-    console.info(`Cleaning ${args?.dbname} using psql...`);
-  }
-
-  const client = new Client({
-    host: args.host,
-    port: args.port,
-    database: args.dbname,
-    user: args.username,
-    password: args.password
-  });
-
-  await client.connect();
-  await client.query(`
-      DO $$ DECLARE
-          r RECORD;
-      BEGIN
-          FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-              EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
-          END LOOP;
-      END $$; 
-  `);
-  await client.end();
-
-  if (verbose) {
-    console.info(`Database ${dbname} cleaned successfully.`);
-  }
-
-}
-
-const createDatabase = async function (params) {
-
-  const dbname = params.args.dbname;
-  const args = params.args;
-  const createWith = params.args.createWith;
-  const verbose = params.args.verbose;
-
-  if (verbose) {
-    console.info(`Creating ${args?.dbname} using psql...`);
-  }
-
-  const client = new Client({
-    host: args.host,
-    port: args.port,
-    database: 'postgres',
-    user: args.username,
-    password: args.password
-  });
-
-  await client.connect();
-  await client.query(`CREATE DATABASE ${dbname}${createWith ? ' WITH ' + createWith : ''};`);
-  await client.end();
-
-  if (verbose) {
-    console.info(`Database ${dbname} created successfully.`);
   }
 
 }

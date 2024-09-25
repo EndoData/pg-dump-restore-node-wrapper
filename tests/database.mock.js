@@ -1,5 +1,5 @@
 const Sequelize = require("sequelize");
-require("pg");
+const psql = require("../lib/psql");
 
 let DataMock;
 let DataMockExtra;
@@ -128,22 +128,11 @@ const closeDatabases = async () => {
 
 }
 
-const killAllConnections = async () => {
-
-  await sequelizePostgres.query(`
-    SELECT pg_terminate_backend(pid)
-    FROM pg_stat_activity
-    WHERE datname = '${CREDENTIALS.dbname}'
-    AND pid <> pg_backend_pid();
-  `);
-
-}
-
 const dropDatabaseIfExists = async () => {
 
   await openDatabasePostgress()
-  await killAllConnections()
-  await sequelizePostgres.query(`DROP DATABASE IF EXISTS ${CREDENTIALS.dbname}`);
+  await psql.killAllConnections({ args: CREDENTIALS })
+  await psql.dropDatabaseIfExists({ args: CREDENTIALS })
   await closeDatabases()
 
 }
@@ -151,10 +140,10 @@ const dropDatabaseIfExists = async () => {
 const createDatabase = async () => {
 
   await openDatabasePostgress()
-  await sequelizePostgres.query(`
-    CREATE DATABASE ${CREDENTIALS.dbname}
-    WITH TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';
-  `);
+  await psql.createDatabase({
+    args: CREDENTIALS,
+    createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';`
+  })
   await closeDatabases()
 
 }
@@ -178,11 +167,7 @@ const getDataMockExtra = async () => {
 const checkLCCollate = async () => {
 
   await openDatabaseTest()
-  const [result] = await sequelizeTest.query(`
-    SELECT datcollate 
-    FROM pg_database 
-    WHERE datname = '${CREDENTIALS.dbname}'
-  `);
+  await psql.checkLCCollate({ args: CREDENTIALS })
   await closeDatabases()
 
   const lcCollate = result[0].datcollate;
@@ -194,9 +179,9 @@ module.exports = {
   getDataMockExtra,
   sequelize: sequelizeTest,
   createDatabase,
+  dropDatabaseIfExists,
   createAndPopuleTableMock,
   createAndPopuleExtraTableMock,
-  dropDatabaseIfExists,
   checkLCCollate,
   CREDENTIALS
 };
