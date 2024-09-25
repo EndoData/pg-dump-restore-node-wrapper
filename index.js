@@ -4,24 +4,23 @@ const { Client } = require("pg");
 const psql = require("./lib/psql");
 const compare = require('./compare');
 
-let os = process.platform === "win32" ? "win" : "macos";
 
-let binariesPath = path.join(
-  __dirname.replace("app.asar", "app.asar.unpacked"),
-  "bin",
-  os,
-  "bin"
-);
 
-let pgRestorePath = path.join(
-  binariesPath,
-  os === "win" ? "pg_restore.exe" : "pg_restore"
-);
+const binariesPath = (version, type) => {
 
-let pgDumpPath = path.join(
-  binariesPath,
-  os === "win" ? "pg_dump.exe" : "pg_dump"
-);
+  let os = process.platform === "win32" ? "win" : "macos";
+  let subFolder = process.platform === "win32" ? "" : "bin";
+
+  return path.join(
+    __dirname.replace("app.asar", "app.asar.unpacked"),
+    "bin",
+    os,
+    version,
+    subFolder,
+    os === "win" ? `${type}.exe` : type,
+  );
+
+}
 
 const dump = function ({
   port = 5432,
@@ -29,11 +28,14 @@ const dump = function ({
   dbname,
   username,
   password,
+  version = '17rc1',
   verbose,
   file,
   format = "c",
 }) {
   let args = [];
+  let pgDumpPath = binariesPath(version, 'pg_dump');
+
   if (password) {
     if (!(username && password && host && port && dbname)) {
       throw new Error(
@@ -89,6 +91,7 @@ const restore = async function ({
   dbname,
   username,
   password,
+  version = '17rc1',
   verbose,
   filename,
   disableTriggers,
@@ -97,6 +100,7 @@ const restore = async function ({
   createWith = ''
 }) {
   let args = [];
+  let pgRestorePath = binariesPath(version, 'pg_restore');
 
   if (disableTriggers) {
     args.push("--disable-triggers");
@@ -178,18 +182,5 @@ const restore = async function ({
   return subprocess;
 
 };
-
-const checkError = (data, args) => {
-
-  const message = data.toString().trim();
-  if (message.includes('error:')) {
-    if (!(args?.create && !message.includes('already exists'))) {
-      console.error(message);
-    }
-  } else {
-    console.info(message);
-  }
-
-}
 
 module.exports = { dump, restore, compare, pgRestorePath, pgDumpPath };
