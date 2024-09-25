@@ -1,35 +1,129 @@
 const database = require("./database.mock");
 const pgDumpRestore = require("../index");
+const psql = require("../lib/psql");
 const fs = require("fs-extra");
 
-describe("Can dump and restore database", () => {
-  beforeAll(async () => {
-    await database.sequelize.sync({ force: true });
-    await database.populate();
-  });
-  describe("Can dump", () => {
-    test("can dump database", async () => {
-      expect.assertions(1);
-      await pgDumpRestore.dump({
-        ...database.CREDENTIALS,
-        file: "./test.pgdump",
-      });
-      expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
-    });
-  });
-  describe("Can restore", () => {
-    test("can restore database", async () => {
-      expect.assertions(1);
-      await database.sequelize.drop();
-      await pgDumpRestore.restore({
-        ...database.CREDENTIALS,
-        filename: "./test.pgdump",
-      });
-      allPatients = await database.Patient.findAll();
-      expect(allPatients.length).toBe(1);
-    });
-  });
-  afterAll(async () => {
-    await fs.remove("./test.pgdump");
-  });
+beforeAll(async () => {
+  await database.dropDatabaseIfExists({ args: database.CREDENTIALS });
+  await database.createDatabase();
+  await database.createAndPopuleTableMock();
 });
+test("should dump database", async () => {
+
+  expect.assertions(1);
+  await pgDumpRestore.dump({
+    ...database.CREDENTIALS,
+    file: "./test.pgdump",
+  });
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+
+});
+test("should not restore the database when it already exists", async () => {
+
+  try {
+
+    expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+    await pgDumpRestore.restore({
+      ...database.CREDENTIALS,
+      filename: "./test.pgdump",
+      create: true,
+    });
+    expect(true).toBe(false);
+
+  } catch (error) {
+
+    expect(true).toBe(true);
+
+  }
+
+});
+test("should restore database when already exists if clean requested", async () => {
+
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  await pgDumpRestore.restore({
+    ...database.CREDENTIALS,
+    filename: "./test.pgdump",
+    clean: true,
+    create: true,
+  });
+  expect(true).toBe(true);
+
+});
+test("should restore database create parameters (createWith)", async () => {
+
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  await database.dropDatabaseIfExists();
+  await pgDumpRestore.restore({
+    ...database.CREDENTIALS,
+    filename: "./test.pgdump",
+    create: true,
+    createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='C' LC_CTYPE='C';`
+  });
+  const allDataMock = await database.getDataMock();
+  const collate = await psql.checkLCCollate({ args: database.CREDENTIALS })
+
+  expect(allDataMock.length).toBe(1);
+  expect(collate === 'C').toBe(true);
+
+});
+test("Should restore the database by maintaining existing tables", async () => {
+
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  await database.dropDatabaseIfExists();
+  await psql.createDatabase({ args: database.CREDENTIALS })
+  await database.createAndPopuleExtraTableMock();
+  await pgDumpRestore.restore({
+    ...database.CREDENTIALS,
+    filename: "./test.pgdump"
+  });
+  const allDataMock = await database.getDataMock();
+  const allDataMockExtra = await database.getDataMockExtra();
+  expect(allDataMock.length + allDataMockExtra.length).toBe(2);
+
+});
+test("Should restore the database eliminating existing tables", async () => {
+
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  await database.dropDatabaseIfExists();
+  await psql.createDatabase({ args: database.CREDENTIALS });
+  await database.createAndPopuleExtraTableMock();
+  await pgDumpRestore.restore({
+    ...database.CREDENTIALS,
+    filename: "./test.pgdump",
+    clean: true
+  });
+  const allDataMock = await database.getDataMock();
+  const allDataMockExtra = await database.getDataMockExtra();
+  expect(allDataMock.length + allDataMockExtra.length).toBe(1);
+
+});
+
+test("should dump database (with verbose)", async () => {
+
+  const log = await pgDumpRestore.dump({
+    ...database.CREDENTIALS,
+    file: "./test.pgdump",
+    verbose: true
+  });
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  expect(log.stderr.includes('pg_dump:')).toBeTruthy();
+
+});
+test("should restore database (with verbose)", async () => {
+
+  expect(await fs.pathExists("./test.pgdump")).toBeTruthy();
+  await database.dropDatabaseIfExists();
+  const log = await pgDumpRestore.restore({
+    ...database.CREDENTIALS,
+    filename: "./test.pgdump",
+    create: true,
+    verbose: true
+  });
+  const allDataMock = await database.getDataMock();
+  expect(allDataMock.length).toBe(1);
+  expect(log.stderr.includes('pg_restore:')).toBeTruthy();
+
+});
+afterAll(async () => {
+  await fs.remove("./test.pgdump");
+}); 

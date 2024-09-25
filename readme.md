@@ -29,7 +29,8 @@ async function main() {
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
     disableTriggers, // defaults to false
     clean, // defaults to false
-    create, // defaults to false
+    create, // defaults to false  
+    createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if create is true)
   }); // outputs an execa object
 }
 ```
