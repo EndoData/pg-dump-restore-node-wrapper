@@ -18,8 +18,7 @@ async function main() {
     username,
     password,
     file: "./test.pgdump",
-    verbose: true, // defaults to false
-    format // defaults to 'c'
+    format, // defaults to 'c'
   }); // outputs an execa object
 
   const { stdout, stderr } = await pgDumpRestore.restore({
@@ -30,13 +29,9 @@ async function main() {
     password,
     filename: "./test.pgdump", // note the filename instead of file, following the pg_restore naming.
     disableTriggers, // defaults to false
-    verbose: true, // defaults to false
-    ifExists, // defaults to false
-    disableTriggers, // defaults to false
     clean, // defaults to false
-    create, // defaults to false
-    createMethod: 'pg_restore', // defaults to 'pg_restore'. The options are 'auto', 'psql' and 'pg_restore'
-    createPsqlWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if createMethod is psql)
+    create, // defaults to false  
+    createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if create is true)
   }); // outputs an execa object
 
  const result = await pgDumpRestore.compare({
