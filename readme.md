@@ -35,7 +35,23 @@ async function main() {
     create, // defaults to false  
     createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';` // optional (only if create is true)
   }); // outputs an execa object
- 
+
+ const result = await pgDumpRestore.compare({
+      source: {
+          host,
+          user,
+          password,
+          port, // defaults to 5432
+          ssl // example: { rejectUnauthorized: false }
+      },
+      target: {
+          host,
+          user,
+          password,
+          port // defaults to 5432
+      }
+  }); // outputs an detailed object from both databases
+
 }
 ```
 
