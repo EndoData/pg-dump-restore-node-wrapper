@@ -1,54 +1,136 @@
 const Sequelize = require("sequelize");
-require("pg");
+const psql = require("../lib/psql");
+
+const Mocks = {}
+Mocks['Table1'] = {
+  model: null,
+  data: {
+    id: `p${Math.floor(Math.random() * 1000)}`,
+    name: `row_from_table_1`,
+    data: { wow: Math.floor(Math.random() * 1000) },
+    misc: {}
+  }
+}
+Mocks['Table2'] = {
+  model: null,
+  data: {
+    id: `p${Math.floor(Math.random() * 1000)}`,
+    name: `row_from_table_2`,
+    data: { wow: Math.floor(Math.random() * 1000) },
+    misc: {}
+  }
+}
 
 const CREDENTIALS = {
   host: "127.0.0.1",
   port: 5432,
-  dbname: "pg_dump_restore_tests",
   username: "postgres",
   password: "28F50CD7-CA87-4796-AF3F-4C161483CCE1",
 };
+const DATABASES = {
+  tests: "pg_dump_restore_tests"
+}
 
 let databaseConfig = {
-  logging: () => {},
+  logging: () => { },
   dialect: "postgres",
   host: CREDENTIALS.host,
-  database: CREDENTIALS.dbname,
   username: CREDENTIALS.username,
   port: CREDENTIALS.port,
   password: CREDENTIALS.password,
 };
 
-let sequelize = new Sequelize(databaseConfig);
+let sequelizeTest = new Sequelize({ dialect: databaseConfig.dialect });
 
-const Patient = sequelize.define(
-  "patient",
-  {
-    id: {
-      type: Sequelize.STRING,
-      primaryKey: true,
-      allowNull: false,
-    },
-    data: { type: Sequelize.JSON },
-    misc: { type: Sequelize.JSON },
-  },
-  {
-    createdAt: "created_at",
-    updatedAt: "updated_at",
-    deletedAt: "deleted_at",
-    paranoid: true,
-  }
-);
+const openDatabase = async (database) => {
 
-const populate = async () => {
-  let patient2 = await Patient.create(
+  sequelizeTest = new Sequelize({ ...databaseConfig, database });
+  await sequelizeTest.authenticate();
+
+}
+
+const prepareData = async (tableName, force) => {
+
+  Mocks[tableName].model = sequelizeTest.define(
+    tableName,
     {
-      id: "p4567",
-      data: { wow: 1 },
-      misc: {},
+      id: {
+        type: Sequelize.STRING,
+        primaryKey: true,
+        allowNull: false,
+      },
+      name: {
+        type: Sequelize.STRING,
+      },
+      data: { type: Sequelize.JSON },
+      misc: { type: Sequelize.JSON },
     },
-    { user_id: "ME" }
+    {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      deletedAt: "deleted_at",
+      paranoid: true,
+      freezeTableName: true
+    }
   );
-};
+  await Mocks[tableName].model.sync({ force });
 
-module.exports = { Patient, sequelize, populate, CREDENTIALS };
+}
+
+
+const populeWithMore = async (database, tableName) => {
+
+  await createAndPopule(database, tableName, false)
+
+}
+
+const createAndPopule = async (database, tableName, sync = true) => {
+
+  await openDatabase(database)
+  await prepareData(tableName, sync)
+  await Mocks[tableName].model.create(Mocks[tableName].data);
+  await closeDatabases()
+
+}
+
+const getData = async (database, tableName) => {
+
+  await openDatabase(database)
+  await prepareData(tableName)
+  return await Mocks[tableName].model.findAll();
+
+}
+
+const closeDatabases = async () => {
+
+  await sequelizeTest.close();
+
+}
+
+const dropDatabaseIfExists = async (database) => {
+
+  await psql.killAllConnections(CREDENTIALS, { dbname: database })
+  await psql.dropDatabaseIfExists(CREDENTIALS, { dbname: database })
+
+}
+
+const createDatabase = async (database) => {
+
+  await psql.createDatabase(CREDENTIALS,
+    {
+      dbname: database,
+      createWith: `TEMPLATE=template0 ENCODING='UTF8' LC_COLLATE='en-US' LC_CTYPE='en-US';`
+    })
+
+}
+
+module.exports = {
+  getData,
+  sequelize: sequelizeTest,
+  createDatabase,
+  dropDatabaseIfExists,
+  createAndPopule,
+  populeWithMore,
+  CREDENTIALS,
+  DATABASES
+};
