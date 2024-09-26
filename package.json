@@ -7,13 +7,22 @@
     "test": "jest"
   },
   "publishConfig": {
-    "registry":"https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   },
   "author": "Jeremy Dahan",
+  "contributors": [
+    {
+      "name": "Edelcio Molina",
+      "email": "edelciomolina@gmail.com"
+    }
+  ],
   "license": "MIT",
   "dependencies": {
+    "@types/pg": "^8.11.10",
+    "async-await-foreach": "^1.0.4",
     "execa": "^4.0.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
     "fs-extra": "^10.0.0",
