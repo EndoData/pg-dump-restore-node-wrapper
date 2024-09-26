@@ -19,6 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/pg": "^8.11.10",
+    "async-await-foreach": "^1.0.4",
     "execa": "^4.0.0",
     "path": "^0.12.7",
     "pg": "^8.12.0"
